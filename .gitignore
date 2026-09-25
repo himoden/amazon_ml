@@ -1,13 +1,42 @@
+# ---- Challenge data (never commit) ----
 dataset/
-output/
 *.tsv
 *.csv
+
+# ---- Heavy generated artifacts (stay in the remote runtime) ----
+output/
+cache/
+embeddings/
+faiss-index/
 *.parquet
 *.pkl
 *.joblib
+*.npy
+*.npz
+*.model
+*.txt.bz2
+*.xlsx
+
+# ---- Model weights ----
 *.bin
 *.safetensors
+*.ckpt
+*.onnx
+
+# ---- Python ----
 __pycache__/
-.ipynb_checkpoints/
+*.pyc
+*.egg-info/
 .venv/
-echo ".DS_Store" >> .gitignore
+venv/
+
+# ---- Notebooks / IDE ----
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+
+# ---- Misc ----
+.env
+wandb/
+*.log

@@ -1,0 +1,10 @@
+# Amazon ML Challenge 2026 - Business Entity Resolution (baseline)
+# CPU-only. Keep minimal; add GPU/advanced deps in a SEPARATE later stage.
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+scipy>=1.10
+lightgbm>=4.0
+rapidfuzz>=3.4
+pyarrow>=14.0
+tqdm>=4.60
