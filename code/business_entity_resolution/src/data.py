@@ -146,10 +146,11 @@ def load_ground_truth(cfg):
     gt = pd.read_csv(path, sep="\t", dtype=str)
     maps = {}
     for s1, m in zip(gt["source1_entity_id"], gt["matched_entity_ids"]):
-        if m is None:
+        if pd.isna(m) or not str(m).strip():
             maps[s1] = set()
             continue
-        parts = [p for p in m.split(",") if p.strip()]
+
+        parts = [p.strip() for p in str(m).split(",") if p.strip()]
         maps[s1] = set(parts)
     return maps
 
