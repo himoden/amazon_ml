@@ -163,9 +163,28 @@ def group_split(cfg: C.Config, s1_ids):
 # Phase 5+6 - candidates + features for the training data
 # ---------------------------------------------------------------------------
 
+def _source_tabs(tabs: dict, split: str | None = None) -> dict:
+    """Return the flat {s1,s2,s3} source mapping expected by downstream phases.
+
+    ``build_entities`` returns {split: {source: DataFrame}} while some callers
+    historically passed the inner {source: DataFrame} mapping. Accept both
+    shapes so the notebook and pipeline stay compatible.
+    """
+    if split is not None and split in tabs and isinstance(tabs[split], dict):
+        return tabs[split]
+    if "s1" in tabs and isinstance(tabs["s1"], pd.DataFrame):
+        return tabs
+    # Prefer the only split-shaped mapping when no split was supplied.
+    for value in tabs.values():
+        if isinstance(value, dict) and "s1" in value:
+            return value
+    raise KeyError("Expected source tables keyed by s1/s2/s3")
+
+
 def pool_frame(train_tabs: dict, s1_countries=None) -> pd.DataFrame:
     """S2+S3 combined table (for the given split)."""
-    pool = pd.concat([train_tabs["s2"], train_tabs["s3"]], ignore_index=True)
+    tabs = _source_tabs(train_tabs)
+    pool = pd.concat([tabs["s2"], tabs["s3"]], ignore_index=True)
     if s1_countries is not None:
         pool["country"] = pool["country"].cat.set_categories(
             list(s1_countries) + [
@@ -180,8 +199,9 @@ def candidates_train(cfg: C.Config, train_tabs, gt_map, train_ids, valid_ids):
     Returns (cands_train, cands_valid, stats_dict).
     """
     t0 = time.time()
-    s1 = train_tabs["s1"]
-    pool = pool_frame(train_tabs, s1["country"].cat.categories.tolist())
+    tabs = _source_tabs(train_tabs, "train")
+    s1 = tabs["s1"]
+    pool = pool_frame(tabs, s1["country"].cat.categories.tolist())
     cands_all = B.generate_candidates_all_countries(s1, pool, cfg)
 
     import pandas as pd
@@ -207,8 +227,9 @@ def candidates_train(cfg: C.Config, train_tabs, gt_map, train_ids, valid_ids):
 def build_features(cfg, cands, train_tabs):
     """Pairwise features for a candidate frame (no labels here)."""
     t0 = time.time()
+    tabs = _source_tabs(train_tabs, "train")
     df, X, names = F.build_features(
-        cands, train_tabs["s1"], pool_frame(train_tabs), cfg)
+        cands, tabs["s1"], pool_frame(tabs), cfg)
     _t("features", t0)
     return df, X, names
 
@@ -306,8 +327,9 @@ def final_model(cfg, df_all, feature_names):
 
 def candidates_test(cfg, test_tabs):
     t0 = time.time()
-    s1 = test_tabs["s1"]
-    pool = pool_frame(test_tabs, s1["country"].cat.categories.tolist())
+    tabs = _source_tabs(test_tabs, "test")
+    s1 = tabs["s1"]
+    pool = pool_frame(tabs, s1["country"].cat.categories.tolist())
     cands = B.generate_candidates_all_countries(s1, pool, cfg)
     avg, reduced, total = B.candidate_stats(cands, len(s1), len(pool))
     print(f"[blocking-test] candidates={len(cands)}, avg/S1={avg:.2f}, "
@@ -317,7 +339,8 @@ def candidates_test(cfg, test_tabs):
 
 
 def infer_test(cfg, model, cands_test, test_tabs):
-    df, X, names = F.build_features(cands_test, test_tabs["s1"], pool_frame(test_tabs), cfg)
+    tabs = _source_tabs(test_tabs, "test")
+    df, X, names = F.build_features(cands_test, tabs["s1"], pool_frame(tabs), cfg)
     probs = M.predict_proba(model, X)
     df["prob"] = probs
     return df[["s1", "s23", "prob"]], names
@@ -349,7 +372,8 @@ def write_outputs(cfg, matches, cands_test, test_tabs,
     separately (the notebook writes matching_results first, then candidates).
     """
     os.makedirs(cfg.paths().output_dir, exist_ok=True)
-    all_s1 = test_tabs["s1"]["entity_id"].tolist()
+    tabs = _source_tabs(test_tabs, "test")
+    all_s1 = tabs["s1"]["entity_id"].tolist()
 
     mpath = os.path.join(cfg.paths().output_dir, "matching_results.tsv")
     if write_matches:
