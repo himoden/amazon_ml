@@ -184,6 +184,7 @@ def latin_fold(text) -> str:
     if contains_indic(text):
         text = _deva_to_latin(text)
     s = unicodedata.normalize("NFKC", text).lower()
+    s = s.replace("&", " and ")
     s = unicodedata.normalize("NFD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     s = _strip_punct_keep_alnum(s)
