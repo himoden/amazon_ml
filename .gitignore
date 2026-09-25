@@ -1,0 +1,12 @@
+dataset/
+output/
+*.tsv
+*.csv
+*.parquet
+*.pkl
+*.joblib
+*.bin
+*.safetensors
+__pycache__/
+.ipynb_checkpoints/
+.venv/
