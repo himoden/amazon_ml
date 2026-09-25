@@ -111,8 +111,8 @@ class Config:
     required_fold: str = ""             # optional fixed fold name to resume
 
     # --- blocking ----------------------------------------------------------------------
-    block_top_k: int = 40               # top-k TF-IDF retrieval candidates per S1
-    max_candidates_per_s1: int = 25     # hard cap on the union candidate set per S1
+    block_top_k: int = 100               # top-k TF-IDF retrieval candidates per S1
+    max_candidates_per_s1: int = 100     # hard cap on the union candidate set per S1
     ngram_range: tuple = (3, 5)         # char n-gram range for TF-IDF
     max_features: int = 300_000         # TF-IDF vocabulary cap (memory control)
     min_df: int = 2
